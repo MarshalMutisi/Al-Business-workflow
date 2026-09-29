@@ -22,8 +22,8 @@
       "name": "Gmail Trigger",
       "credentials": {
         "gmailOAuth2": {
-          "id": "ZTysqLlLen10oEu6",
-          "name": "Gmail account 9"
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
         }
       }
     },
@@ -43,7 +43,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://al-business-workflow-1.onrender.com/webhooks/email",
+        "url": "https://YOUR_BACKEND_HOST/webhooks/email",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -66,8 +66,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
-          "name": "X-Webhook-Secret"
+          "id": "YOUR_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "Webhook header auth"
         }
       }
     },
@@ -94,7 +94,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/claim_outbound_emails",
+        "url": "https://YOUR_PROJECT_REF.supabase.co/rest/v1/rpc/claim_outbound_emails",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendBody": true,
@@ -112,7 +112,7 @@
       "name": "Claim queued replies",
       "credentials": {
         "supabaseApi": {
-          "id": "P89eoszGX2BfLdG6",
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
           "name": "Supabase account"
         }
       }
@@ -203,11 +203,10 @@
       ],
       "id": "e8326f0a-d2c0-4cb1-aa29-df4a6014bf1b",
       "name": "Gmail: reply in thread",
-      "webhookId": "2b80c419-aa64-4316-8f72-eb0164d56510",
       "credentials": {
         "gmailOAuth2": {
-          "id": "ZTysqLlLen10oEu6",
-          "name": "Gmail account 9"
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
         }
       },
       "onError": "continueErrorOutput"
@@ -230,11 +229,10 @@
       ],
       "id": "78e34b39-4273-48e6-a490-2c47d5a2acba",
       "name": "Gmail: send new email",
-      "webhookId": "965b46f7-1238-4542-b7e9-4b51a58d33b6",
       "credentials": {
         "gmailOAuth2": {
-          "id": "ZTysqLlLen10oEu6",
-          "name": "Gmail account 9"
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
         }
       },
       "onError": "continueErrorOutput"
@@ -242,7 +240,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/complete_outbound_email",
+        "url": "https://YOUR_PROJECT_REF.supabase.co/rest/v1/rpc/complete_outbound_email",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendBody": true,
@@ -260,7 +258,7 @@
       "name": "Mark sent",
       "credentials": {
         "supabaseApi": {
-          "id": "P89eoszGX2BfLdG6",
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
           "name": "Supabase account"
         }
       }
@@ -268,7 +266,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/complete_outbound_email",
+        "url": "https://YOUR_PROJECT_REF.supabase.co/rest/v1/rpc/complete_outbound_email",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendBody": true,
@@ -286,7 +284,7 @@
       "name": "Mark failed",
       "credentials": {
         "supabaseApi": {
-          "id": "P89eoszGX2BfLdG6",
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
           "name": "Supabase account"
         }
       }
@@ -409,11 +407,5 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "19dfd5c2-b42b-4ee6-8be8-e9dd67372493",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "004c5c0b7ab61962a5ca1d9e6bc300bd9992b56235f70fa778ccbb7233587d50"
-  },
-  "id": "bUAjqQMsdTZbs7s0cLU2c",
   "tags": []
 }
