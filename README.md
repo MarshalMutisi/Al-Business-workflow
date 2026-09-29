@@ -88,8 +88,11 @@ Setup (self-hosted n8n in Docker):
 4. **Header Auth credential** in n8n: Name `X-Webhook-Secret`, Value = your `WEBHOOK_SECRET`.
 5. In n8n: *Workflows → Import from file* → `Email-intake.json`, select the credentials on the HTTP Request nodes, then **Activate**.
 
-n8n reaches the API at `http://host.docker.internal:8000` (Docker Desktop). The API must be running and bound to
-`0.0.0.0` (the default here). On Linux Docker, start n8n with `--add-host=host.docker.internal:host-gateway`.
+The workflow posts to the API deployed on Render (`https://al-business-workflow-1.onrender.com/webhooks/email`),
+with a 2-minute timeout and retries because the free Render instance takes about a minute to wake up. To use a
+local API instead, change that node's URL to `http://host.docker.internal:8000/webhooks/email` (Docker Desktop;
+on Linux Docker start n8n with `--add-host=host.docker.internal:host-gateway`). Never type the secret into the
+node itself: the file is committed, so the secret must stay in the Header Auth credential.
 
 ## Tracing with LangSmith
 
@@ -191,5 +194,3 @@ from the dashboard and they resume from their last checkpoint.
 
 psycopg's async driver needs a selector event loop on Windows. `uv run ai-bussiness-workflow` sets this
 up; if you start uvicorn yourself add `--loop asyncio:SelectorEventLoop`.
-#   A l - B u s i n e s s - w o r k f l o w  
- 

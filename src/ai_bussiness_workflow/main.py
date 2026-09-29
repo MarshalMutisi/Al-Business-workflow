@@ -21,6 +21,8 @@ from .mcp_servers.mcp_client import crm
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+# httpx logs every Supabase request at INFO (e.g. the stale-run check each minute); keep only problems.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 settings = get_settings()
 
@@ -117,7 +119,8 @@ class ApprovalDecision(BaseModel):
     )
 
 
-@app.get("/")
+# HEAD too: uptime monitors and Render's port probe check with HEAD requests.
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "Hello World"}
 

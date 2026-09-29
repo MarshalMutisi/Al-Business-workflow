@@ -43,20 +43,15 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8000/webhooks/email",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Webhook-Secret",
-              "value": "taCLZE16yAhOnoYOKIJM1DJXgV_1iLozZDUmJxQs-A8"
-            }
-          ]
-        },
+        "url": "https://al-business-workflow-1.onrender.com/webhooks/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
-        "options": {}
+        "options": {
+          "timeout": 120000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
@@ -65,7 +60,16 @@
         -608
       ],
       "id": "239c33bb-0742-4500-9185-2d61dc5a4c4b",
-      "name": "HTTP Request"
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "X-Webhook-Secret"
+        }
+      }
     },
     {
       "parameters": {
