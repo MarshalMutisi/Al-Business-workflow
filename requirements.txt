@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic[email]
+python-dotenv
+langchain
+langgraph
+langchain-groq
+langgraph-prebuilt
+
+supabase
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+mcp
+httpx
+langsmith

@@ -1,0 +1,415 @@
+{
+  "name": "Email-intake",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1264,
+        -608
+      ],
+      "id": "7a131a89-220b-4e7a-b065-bee73bf082e7",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZTysqLlLen10oEu6",
+          "name": "Gmail account 9"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const data = item.json;\n\n  const from = data.From ?? \"\";\n\n  const match = from.match(/^(.*?)\\s*<([^>]+)>$/);\n\n  item.json = {\n    message_id: data.id ?? \"\",\n    thread_id: data.threadId ?? \"\",\n    from_name: match ? match[1].trim() : \"\",\n    from_email: match ? match[2].trim() : from.trim(),\n    to: data.To ?? \"\",\n    subject: data.Subject ?? \"\",\n    body_text: data.snippet ?? \"\",\n    received_at: data.internalDate\n      ? new Date(Number(data.internalDate)).toISOString()\n      : \"\",\n    attachments: []\n  };\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        -608
+      ],
+      "id": "eec8699f-f443-4c9e-a4d4-e6c41cc61128",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/webhooks/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "taCLZE16yAhOnoYOKIJM1DJXgV_1iLozZDUmJxQs-A8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -592,
+        -608
+      ],
+      "id": "239c33bb-0742-4500-9185-2d61dc5a4c4b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1248,
+        -304
+      ],
+      "id": "27f0671d-d492-4e7c-8474-f101696ac929",
+      "name": "Every minute"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/claim_outbound_emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"p_limit\": 10 }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1008,
+        -304
+      ],
+      "id": "6bbfbe4e-2c56-4926-a87e-c3562fa356bc",
+      "name": "Claim queued replies",
+      "credentials": {
+        "supabaseApi": {
+          "id": "P89eoszGX2BfLdG6",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        -304
+      ],
+      "id": "3482faf9-e448-4c93-9169-4e7a04f1254e",
+      "name": "Has reply"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "leftValue": "={{ !!$json.in_reply_to && !$json.in_reply_to.includes('@') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -288
+      ],
+      "id": "9f2de269-293c-453f-97c6-e087c182cd07",
+      "name": "Reply to a Gmail message?"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $json.in_reply_to }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        -368
+      ],
+      "id": "e8326f0a-d2c0-4cb1-aa29-df4a6014bf1b",
+      "name": "Gmail: reply in thread",
+      "webhookId": "2b80c419-aa64-4316-8f72-eb0164d56510",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZTysqLlLen10oEu6",
+          "name": "Gmail account 9"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to_email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -144,
+        -48
+      ],
+      "id": "78e34b39-4273-48e6-a490-2c47d5a2acba",
+      "name": "Gmail: send new email",
+      "webhookId": "965b46f7-1238-4542-b7e9-4b51a58d33b6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZTysqLlLen10oEu6",
+          "name": "Gmail account 9"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/complete_outbound_email",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_id: $('Has reply').item.json.id, p_success: true, p_provider_message_id: $json.id }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        288,
+        -320
+      ],
+      "id": "93b9a682-310e-4809-826f-98e4b28761c0",
+      "name": "Mark sent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "P89eoszGX2BfLdG6",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://egpjpylwvadogjrwrvea.supabase.co/rest/v1/rpc/complete_outbound_email",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_id: $('Has reply').item.json.id, p_success: false, p_error: String($json.error?.message ?? $json.error ?? 'Gmail send failed') }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        336,
+        -48
+      ],
+      "id": "91af8978-4670-4470-a1e1-c650e42e3094",
+      "name": "Mark failed",
+      "credentials": {
+        "supabaseApi": {
+          "id": "P89eoszGX2BfLdG6",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every minute": {
+      "main": [
+        [
+          {
+            "node": "Claim queued replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim queued replies": {
+      "main": [
+        [
+          {
+            "node": "Has reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has reply": {
+      "main": [
+        [
+          {
+            "node": "Reply to a Gmail message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a Gmail message?": {
+      "main": [
+        [
+          {
+            "node": "Gmail: reply in thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail: send new email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: reply in thread": {
+      "main": [
+        [
+          {
+            "node": "Mark sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: send new email": {
+      "main": [
+        [
+          {
+            "node": "Mark sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "19dfd5c2-b42b-4ee6-8be8-e9dd67372493",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "004c5c0b7ab61962a5ca1d9e6bc300bd9992b56235f70fa778ccbb7233587d50"
+  },
+  "id": "bUAjqQMsdTZbs7s0cLU2c",
+  "tags": []
+}

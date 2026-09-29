@@ -1,0 +1,98 @@
+# Render Blueprint: API, dashboard and n8n. Setup steps: README.md -> "Deploying to Render".
+# Region: Frankfurt is Render's closest region to the Supabase project (eu-west-2, London).
+# Values marked `sync: false` are asked for when you create the Blueprint; nothing secret is stored in this file.
+
+services:
+  # FastAPI + agent. Wakes from sleep when n8n posts an email to it.
+  - type: web
+    name: workflow-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      ignoredPaths: ["dashboard/**", "n8n/**", "supabase/**", "scripts/**", "**/*.md"]
+    envVars:
+      - key: WEBHOOK_SECRET # n8n sends this; copy it into n8n's Header Auth credential
+        generateValue: true
+      - key: ADMIN_API_KEY # you sign in to the dashboard with this
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL # Session pooler string (port 5432), same as your local .env
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: APPROVAL_CONFIDENCE_THRESHOLD
+        value: "0.75"
+      - key: ALWAYS_REQUIRE_APPROVAL
+        value: "false"
+      # To trace runs, set this to "true" and add LANGSMITH_API_KEY in the Render dashboard.
+      - key: LANGSMITH_TRACING
+        value: "false"
+      - key: LANGSMITH_PROJECT
+        value: ai-business-workflow
+
+  # Next.js admin dashboard. Only redeploys when files under dashboard/ change.
+  - type: web
+    name: workflow-dashboard
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: dashboard
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: API_URL # the API's public URL, e.g. https://workflow-api.onrender.com
+        sync: false
+
+  # n8n (free, self-hosted Community Edition). Stores everything in the Supabase `n8n` schema, so free-tier
+  # restarts lose nothing. Free instances sleep: keep it awake with an uptime pinger on /healthz (see README).
+  - type: web
+    name: workflow-n8n
+    runtime: image
+    image:
+      url: docker.io/n8nio/n8n:2.41.3 # pin; bump deliberately to upgrade
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    envVars:
+      - key: N8N_PORT
+        value: "10000"
+      - key: N8N_PROXY_HOPS
+        value: "1"
+      - key: WEBHOOK_URL # this service's own URL, e.g. https://workflow-n8n.onrender.com/
+        sync: false
+      - key: N8N_ENCRYPTION_KEY # encrypts saved credentials; never change it after first start
+        generateValue: true
+      - key: GENERIC_TIMEZONE
+        value: UTC
+      - key: N8N_DIAGNOSTICS_ENABLED
+        value: "false"
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_HOST # from DATABASE_URL, e.g. aws-0-eu-west-2.pooler.supabase.com
+        sync: false
+      - key: DB_POSTGRESDB_PORT
+        value: "5432"
+      - key: DB_POSTGRESDB_DATABASE
+        value: postgres
+      - key: DB_POSTGRESDB_USER # from DATABASE_URL, e.g. postgres.<project-ref>
+        sync: false
+      - key: DB_POSTGRESDB_PASSWORD
+        sync: false
+      - key: DB_POSTGRESDB_SCHEMA
+        value: n8n
+      - key: DB_POSTGRESDB_POOL_SIZE
+        value: "2"
+      - key: DB_POSTGRESDB_SSL_ENABLED
+        value: "true"
+      - key: DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED
+        value: "false"
